@@ -1,166 +1,227 @@
 # **CortexLayer — AI Support & Knowledge Bot**
 
-> Private backend repository for CortexLayer's first commercial AI service: an RAG-based automated support system with document ingestion, vector search, chat API, usage limits, and optional channel integrations.
+> Private backend repository for CortexLayer’s first commercial AI service: a production-ready RAG-based support automation system with document ingestion, vector search, chat API, usage tracking, billing limits, and optional multi-channel integrations.
 
 ---
 
-## 🚀 **1. Overview**
+# 🚀 **1. Overview**
 
-CortexLayer Chat Support is a production-ready backend powering our AI customer support service.
+**CortexLayer Chat Support** is the backend powering our first commercial AI service.
 
-Clients upload their documents → the system ingests, chunks, embeds, and stores them → end-users interact through our chat widget or WhatsApp → responses are generated using a controlled RAG pipeline with citations.
+Clients upload documents → the system ingests & embeds them → end-users chat through a web widget or WhatsApp → answers are generated using a controlled RAG pipeline with citations.
 
 This repository contains:
 
-- FastAPI backend
-- RAG engine
-- Document ingestion pipeline
-- Embeddings + Vector DB
-- Usage tracking + plan enforcement
-- Admin dashboard (basic)
-- Embeddable chat widget
-- Optional WhatsApp integration
+* FastAPI backend
+* Document ingestion & chunking pipeline
+* Embedding + vector search (FAISS)
+* Retrieval-augmented generation (Groq/OpenAI)
+* Usage tracking + per-plan limits
+* Basic admin dashboard (React)
+* Embeddable web widget
+* Optional WhatsApp integration
+* Stripe billing hooks (overages, throttling, subscription management)
+
+Everything here is private and only for internal CortexLayer use.
 
 ---
 
-## 🧠 **2. Service Features (Production Specifications)**
+# 🧠 **2. Service Features (Final Production Specs)**
 
-### **Starter Plan**
+## **Starter Plan**
 
-- Website-embedded chatbot
-- Up to **10 documents**
-- Up to **1,000 conversations/month**
-- Standard RAG (chunk → embed → retrieve)
-- Basic analytics (usage count, daily tracking)
-- Email fallback
-- Model: **Groq Mixtral-8x7B**
-- Setup: **$399**, Monthly: **$79**
+* Web-embedded chatbot
 
-**Internal Limits**
+* Up to **10 documents**
 
-- Max doc size: 5MB
-- Max chunks per doc: 250
-- Rate limit: 15 req/min
+* Up to **1,000 conversations/month**
 
----
+* Standard RAG (chunk → embed → retrieve)
 
-### **Growth Plan**
+* Basic analytics:
 
-Everything in Starter plus:
+  * Query count
+  * Daily usage
 
-- WhatsApp integration (Meta/Twilio)
-- Up to **50 documents**
-- Up to **5,000 conversations/month**
-- Advanced analytics (latency, top queries, doc relevance)
-- Team inbox (simple human handoff)
-- Custom widget branding
-- Model: Mixtral + GPT-4o-mini fallback
-- Setup: **$899**, Monthly: **$199**
+* Email fallback
 
-**Internal Limits**
+* Model: **Groq Mixtral-8x7B**
 
-- Max doc size: 10MB
-- Max chunks/doc: 500
-- Rate limit: 50 req/min
-- Max WhatsApp messages: 2,000/mo
+* One-time setup: **$399**
+
+* Monthly: **$79**
+
+### **Internal Limits (Hard Enforcement)**
+
+* Max file size: **5MB**
+* Max chunks/doc: **250**
+* Rate limit: **15 requests/min**
+* Soft cap: **1,250 chats** (post-cap throttle)
 
 ---
 
-### **Scale Plan**
+## **Growth Plan**
 
-Everything in Growth plus:
+Everything in Starter +:
 
-- CRM integration (HubSpot/Zoho/REST)
-- High-volume document capacity
-- Per-client API keys
-- Multilingual support
-- Soft SLA: 99.5% uptime
-- 3-month post-delivery support
-- Model: **GPT-4o (primary) + Mixtral fallback**
-- Setup: **$1,499**, Monthly: **$349**
+* WhatsApp integration (Meta/Twilio)
 
-**Internal Limits**
+* Up to **50 documents**
 
-- Max file size: 20MB
-- Max chunks: 3,000 per doc
-- Soft usage cap: 50,000 chats/mo (post-cap throttling)
-- Overages billed manually per contract
-- Rate limit: 100 req/min
+* Up to **5,000 conversations/month**
+
+* Advanced analytics:
+
+  * Latency
+  * Top queries
+  * Document relevance stats
+
+* Human handoff inbox
+
+* Custom widget branding
+
+* Models: Mixtral + GPT-4o-mini fallback
+
+* Setup: **$899**
+
+* Monthly: **$199**
+
+### **Internal Limits**
+
+* Max file size: **10MB**
+* Max chunks/doc: **500**
+* Rate limit: **50 requests/min**
+* Max WhatsApp messages: **2,000/mo**
+* Soft cap: **6,000 chats**
 
 ---
 
-## 🏗️ **3. Architecture**
+## **Scale Plan**
+
+Everything in Growth +:
+
+* CRM integrations (HubSpot/Zoho/REST)
+* High-volume docs & conversations
+* Per-client API keys
+* Multilingual support
+* Soft SLA: **99.5% uptime**
+* Dedicated success manager (3-month support)
+* Primary model: **GPT-4o**, fallback: Mixtral
+* Setup: **$1,499**
+* Monthly: **$349**
+
+### **Internal Limits**
+
+* Max file size: **20MB**
+* Max chunks/doc: **3,000**
+* Rate limit: **100 requests/min**
+* Soft cap: **50,000 chats/month**
+* Overages billed automatically
+* FAISS snapshots daily
+
+---
+
+# 💰 **3. Billing, Cost Controls & Overages**
+
+To avoid losses:
+
+* All embedding + LLM usage is **metered per request**
+* Costs stored in `usage_logs` (tokens, embeddings, generation cost)
+* Each plan has soft caps & hard throttles
+* Stripe manages payment + invoices + card failures
+
+### **Overage Billing**
+
+* Overages billed **at cost + 10% margin**
+* Conversations above plan cap:
+
+  * $0.02–$0.04 per query (finalized after model pricing)
+* Embedding overage per 1k vectors: billed at cost
+* LLM generation per 1k tokens: cost + margin
+
+### **Non-payment Rules**
+
+* If invoice fails → client enters **grace state (7 days)**
+* After 7 days → chatbot disabled
+* Reactivates instantly upon payment
+
+---
+
+# 🏗️ **4. Architecture**
 
 ```
-Client Documents
-     ↓
-Ingestion Pipeline (PDF → text → chunking)
-     ↓
-Embeddings (OpenAI/Groq + FAISS)
-     ↓
-Vector DB (FAISS local; optional Pinecone)
-     ↓
-Retriever + RAG Prompt Builder
-     ↓
+Client Upload
+   ↓
+Ingestion Pipeline (PDF/Text/URL → text → chunks)
+   ↓
+Embeddings (OpenAI/Groq via LangChain)
+   ↓
+Vector DB (FAISS, optional Pinecone)
+   ↓
+Retriever → Prompt Builder (citations)
+   ↓
 LLM Response (Groq/OpenAI)
-     ↓
-Client Widget / WhatsApp / API
-     ↓
-Analytics + Plan Enforcement
+   ↓
+Widget / WhatsApp / API
+   ↓
+Usage Logging → Billing Enforcement → Analytics
 ```
 
-Stack:
+Core Stack:
 
-- FastAPI
-- FAISS
-- Groq / OpenAI LLMs
-- PostgreSQL
-- Redis (sessions + rate limit)
-- DigitalOcean Spaces (storage)
-- Docker
+* FastAPI
+* LangChain (chunking + vector DB wrappers)
+* FAISS local (default)
+* Groq + OpenAI LLMs
+* PostgreSQL
+* Redis (rate limit + async tasks)
+* DigitalOcean Spaces (document storage)
+* Docker
 
 ---
 
-## 📦 **4. Repository Structure**
+# 📦 **5. Repository Structure**
 
 ```
 cortexlayer-chat-support/
 │
 ├── backend/
 │   ├── app/
-│   │   ├── main.py               # API entry
-│   │   ├── routes/               # chat, upload, admin, analytics
-│   │   ├── rag/                  # embeddings, retrieval, RAG
-│   │   ├── ingestion/            # PDF/URL/TXT parsing
-│   │   ├── services/             # utilities, auth, rate limiting
-│   │   ├── models/               # DB + Pydantic schemas
-│   │   └── core/                 # config & middleware
+│   │   ├── main.py
+│   │   ├── routes/
+│   │   ├── rag/
+│   │   ├── ingestion/
+│   │   ├── services/
+│   │   ├── models/
+│   │   └── core/
 │   ├── tests/
 │   └── Dockerfile
 │
 ├── frontend/
-│   ├── widget/                   # embeddable chat widget
-│   └── admin/                    # admin dashboard (React)
+│   ├── widget/        # embed.js
+│   └── admin/         # admin panel react
 │
-├── scripts/                      # migrations, ingestion
-├── infra/                        # docker-compose + deployment infra
+├── scripts/
+├── infra/
 └── README.md
 ```
 
 ---
 
-## 🔐 **5. Security Notes**
+# 🔐 **6. Security Notes**
 
-- JWT authentication for admin & clients
-- HTTPS required end-to-end
-- All uploads sanitized
-- Presigned S3 URLs for document uploads
-- Strict CORS rules
-- Redis-based per-client isolation
+* JWT auth for admin + clients
+* Strict per-client data separation
+* Presigned S3 uploads
+* All traffic HTTPS only
+* CORS allowed only for approved domains
+* Redis-level isolation keys
+* Daily backups for DB and FAISS
+* No data used for model training
 
 ---
 
-## ⚙️ **6. Environment Variables**
+# ⚙️ **7. Environment Variables**
 
 ```
 OPENAI_API_KEY=
@@ -174,19 +235,21 @@ PINECONE_API_KEY=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 META_WHATSAPP_TOKEN=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 ```
 
 ---
 
-## ▶️ **7. Running Locally**
+# ▶️ **8. Running Locally**
 
-With Docker:
+### With Docker:
 
 ```
 docker-compose up --build
 ```
 
-Or manual:
+### Without Docker:
 
 ```
 cd backend
@@ -195,54 +258,73 @@ uvicorn app.main:app --reload
 
 ---
 
-## 🧪 **8. API Examples**
+# 🧪 **9. API Examples**
 
-Upload document:
+### Upload document:
 
 ```
 POST /upload
-multipart/form-data: file=<document>
+multipart/form-data: file=<doc>
 ```
 
-Query:
+### Query:
 
 ```
 POST /query
 {
-  "query": "refund policy?",
-  "client_id": "abc123"
+  "client_id": "abc",
+  "query": "refund policy?"
 }
 ```
 
-Admin analytics:
+### Analytics:
 
 ```
-GET /admin/analytics?client_id=abc123
+GET /admin/analytics?client_id=abc
 ```
 
 ---
 
-## 📊 **9. Usage Tracking & Enforcement**
+# 📊 **10. Usage & Throttling Logic**
 
-Each request triggers:
+Each request performs:
 
-1. Check plan limits (daily + monthly)
-2. Check conversations quota
-3. Check doc quota
-4. Throttle or deny if exceeded
-5. Log usage in PostgreSQL
+1. Plan check (Starter/Growth/Scale)
+2. Check conversations count
+3. Document count
+4. Rate limit (Redis)
+5. Cost tracking
+6. Throttle if exceeded
 
-Prevents:
-
-- misuse
-- DDOS
-- clients generating huge LLM bills
+Prevents losses & abuse.
 
 ---
 
-## 🗄️ **10. Data Retention**
+# 🗄️ **11. Data Retention**
 
-- Conversations stored for 30 days
-- Documents stored until client deletes
-- We do NOT use data for model training
-- Clients can request deletion anytime
+* User queries stored 30 days
+* Docs stored until client deletes
+* GDPR/CCPA compliant simple deletion API
+* No training usage
+
+---
+
+# 📡 **12. Monitoring, Backups & SLA**
+
+### Monitoring
+
+* Sentry (errors)
+* Prometheus (metrics)
+* Grafana (dashboards)
+
+### Backups
+
+* DB backup daily
+* FAISS snapshot daily
+* Spaces versioning on
+
+### SLA
+
+* 99.5% uptime target
+* Excludes 3rd-party outages
+* Maintenance notices 48 hrs prior
