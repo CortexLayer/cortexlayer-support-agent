@@ -7,32 +7,37 @@ SQLAlchemy==2.0.29
 psycopg2-binary==2.9.9
 alembic==1.13.1
 
-
 # Redis (rate limiting, caching)
 redis==5.0.1
-
 
 # RAG / Vector Search
 faiss-cpu==1.7.4
 langchain==0.1.16
-langchain-community==0.0.28
+langchain-community==0.0.33
 langchain-openai==0.0.8
+
+
+# Tokenization
+tiktoken==0.6.0
 
 # LLM Clients (Groq + OpenAI)
 openai==1.16.1
-groq==0.4.3
-
+groq==0.36.0
 
 # Storage (S3-compatible: DO Spaces)
 boto3==1.34.79
-
+botocore==1.34.79
 
 # Web Scraping & Ingestion
 beautifulsoup4==4.12.3
 readability-lxml==0.8.1
+trafilatura==1.7.0
 pypdf==4.2.0
+pdfminer.six==20221105
 python-multipart==0.0.9
 requests==2.31.0
+httpx==0.27.0
+lxml==5.2.1
 
 # Authentication & Security
 python-jose==3.3.0
@@ -42,17 +47,25 @@ pyjwt==2.8.0
 # Stripe Billing
 stripe==10.11.0
 
+# Email Services
+sendgrid==6.11.0
+jinja2==3.1.3
+
 # Observability & Logging
 sentry-sdk==1.42.0
 structlog==24.1.0
+python-json-logger==2.0.7
 
 # Utils
+orjson==3.10.7
 pydantic==2.6.4
+pydantic-settings==2.2.1
 python-dotenv==1.0.1
 
 # Testing
 pytest==8.1.1
-httpx==0.27.0
+pytest-asyncio==0.23.5
+pytest-cov==4.1.0
 
 # Developer Tools (Linting, Formatting)
 black==24.3.0
