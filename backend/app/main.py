@@ -1,1 +1,1 @@
-# Entry point: FastAPI boot file
+"""Auto-generated placeholder module for CortexLayer        Backend."""

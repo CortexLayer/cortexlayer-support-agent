@@ -50,6 +50,7 @@ directories = [
     "backend/app/utils",
     "backend/scripts",
     "backend/tests",
+    "backend/docs",
     "infra",
 ]
 
@@ -128,6 +129,7 @@ files = {
     "backend/Dockerfile": MODULE_PLACEHOLDER,
     "backend/requirements.txt": MODULE_PLACEHOLDER,
     ".env.example": MODULE_PLACEHOLDER,
+    ".env" : MODULE_PLACEHOLDER,
     "README.md": MODULE_PLACEHOLDER,
 }
 
