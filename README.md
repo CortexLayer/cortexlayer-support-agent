@@ -270,7 +270,7 @@ cortexlayer-support-agent/
 Install dependencies:
 
 ```
-pip install -r backend/requirements.txt && pip install pre-commit && pre-commit install
+pip install -r backend/requirements.txt && pre-commit install
 ```
 
 Environment variables:
