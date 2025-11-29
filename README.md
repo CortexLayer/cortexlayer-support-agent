@@ -222,6 +222,9 @@ cortexlayer-support-agent/
 │   │   │   ├── whatsapp_service.py  # WhatsApp processing pipeline
 │   │   │   ├── email_service.py     # Email fallback delivery
 |   |   |   ├── stripe_service.py    # customer and subscription handling 
+|   |   |   ├── overage.py           # overage logic
+|   |   |   ├── grace.py             # grace period logic
+|   |   |   ├── scheduler.py         # daily scheduled jobs
 │   │   │   └── handoff_service.py   # Escalation logic
 │   │   │
 │   │   └── utils/                   # Generic helpers
@@ -235,6 +238,10 @@ cortexlayer-support-agent/
 │   │   ├── backup_db.py
 │   │   ├── rebuild_vectorstore.py
 │   │   └── aggregate_usage.py
+|   |  
+│   ├── docs/                      
+│   │   ├── BILLING.md               # ref for billing and usage logic
+│   │   └── CRONJOBS.md              # ref for cron jobs
 │   │
 │   ├── tests/                       # Unit + integration tests
 │   │   └── test_rag.py

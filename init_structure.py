@@ -113,6 +113,9 @@ files = {
     "backend/app/services/email_service.py": MODULE_PLACEHOLDER,
     "backend/app/services/handoff_service.py": MODULE_PLACEHOLDER,
     "backend/app/services/stripe_service.py": MODULE_PLACEHOLDER,
+    "backend/app/services/overage.py": MODULE_PLACEHOLDER,
+    "backend/app/services/grace.py": MODULE_PLACEHOLDER,
+    "backend/app/services/scheduler.py": MODULE_PLACEHOLDER,
     # Utils
     "backend/app/utils/file_utils.py": MODULE_PLACEHOLDER,
     "backend/app/utils/rate_limit.py": MODULE_PLACEHOLDER,
