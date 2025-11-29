@@ -280,19 +280,3 @@ Used for enforcing:
 * document count limit
 * file size limit
 * chunk count limit
-
----
-
-# **9. Summary**
-
-This billing system ensures:
-
-* Full transparency of cost per operation
-* Complete ledger for auditing
-* Accurate monthly billing via Stripe
-* Automatic enforcement of plan limits
-* Auto-disable on abuse or non-payment
-* Clear financial metrics per client
-* Safe cost boundaries for your startup
-
-This document governs **all cost, usage, and billing behavior** in CortexLayer.
