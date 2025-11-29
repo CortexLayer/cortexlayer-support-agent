@@ -3,11 +3,7 @@
 import logging
 import sys
 
-# Use test settings for tests
-try:
-    from backend.app.core.config import settings
-except Exception:
-    from backend.app.core.test_settings import settings
+from backend.app.core.config import settings
 
 
 def setup_logger(name: str) -> logging.Logger:

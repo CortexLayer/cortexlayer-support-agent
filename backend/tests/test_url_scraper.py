@@ -11,9 +11,7 @@ from backend.app.ingestion.url_scraper import (
 )
 
 
-# --------------------------
 # SYNC SUCCESS
-# --------------------------
 @patch("backend.app.ingestion.url_scraper.requests.get")
 def test_scrape_url_sync_success(mock_get):
     """Test successful sync scraping."""
@@ -29,9 +27,7 @@ def test_scrape_url_sync_success(mock_get):
     assert meta["url"] == "https://example.com"
 
 
-# --------------------------
 # SYNC FAILURE
-# --------------------------
 @patch("backend.app.ingestion.url_scraper.requests.get")
 def test_scrape_url_sync_failure(mock_get):
     """Test sync fetch failure raises URLFetchError."""
@@ -41,9 +37,7 @@ def test_scrape_url_sync_failure(mock_get):
         scrape_url_sync("https://badurl.com")
 
 
-# --------------------------
 # ASYNC SUCCESS
-# --------------------------
 @pytest.mark.asyncio
 @patch("backend.app.ingestion.url_scraper.httpx.AsyncClient")
 async def test_scrape_url_async_success(mock_client):
@@ -63,9 +57,7 @@ async def test_scrape_url_async_success(mock_client):
     assert meta["url"] == "https://async.com"
 
 
-# --------------------------
 # ASYNC FAILURE
-# --------------------------
 @pytest.mark.asyncio
 @patch("backend.app.ingestion.url_scraper.httpx.AsyncClient")
 async def test_scrape_url_async_failure(mock_client):
