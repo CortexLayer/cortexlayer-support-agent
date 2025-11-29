@@ -1,40 +1,53 @@
-"""Schema design for usage tracking and billing."""
+"""Usage tracking model."""
 
-# Billing Enums
+import uuid
+from datetime import datetime
 
-"""
-# BillingStatus:
-# - ACTIVE               → Payments OK
-# - GRACE_PERIOD         → Payment failed, 7 days grace
-# - DISABLED             → Hard cap exceeded or grace expired
-# - CANCELLED            → Subscription deleted by user/admin
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
-# PlanType:
-# - STARTER              → Mixtral model, 1k queries
-# - GROWTH               → Mixtral + GPT-4o-mini fallback, 5k queries
-# - SCALE                → GPT-4o priority, 50k queries
-"""
+from backend.app.core.database import Base
 
-# Planned UsageLog Schema
 
-"""
-UsageLog Table (financial ledger)
+class UsageLog(Base):
+    """Tracks billable operations per client."""
 
-id (UUID)                    → Unique log entry
-client_id (UUID)             → Foreign key to clients table
+    __tablename__ = "usage_logs"
 
-operation_type (String)      → "query", "embedding", "whatsapp"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    client_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("clients.id"),
+        nullable=False,
+        index=True,
+    )
 
-input_tokens (Integer)       → LLM prompt tokens
-output_tokens (Integer)      → LLM output tokens
-embedding_tokens (Integer)   → Tokens used for embeddings
+    # Operation details
+    operation_type = Column(String, nullable=False)  # query, embedding, whatsapp
 
-cost_usd (Float)             → Final billed cost snapshot
+    # Token tracking
+    input_tokens = Column(Integer, default=0)
+    output_tokens = Column(Integer, default=0)
+    embedding_tokens = Column(Integer, default=0)
 
-model_used (String)          → mixtral-8x7b / gpt-4o-mini / gpt-4o / embedding model
-latency_ms (Integer)         → Request latency
+    # Cost tracking
+    cost_usd = Column(Float, default=0.0)
 
-metadata (JSON)              → Arbitrary trace/debug info
+    # Metadata
+    model_used = Column(String, nullable=True)
+    latency_ms = Column(Integer, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
 
-timestamp (DateTime)         → Log creation time
-"""
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    client = relationship("Client", back_populates="usage_logs")

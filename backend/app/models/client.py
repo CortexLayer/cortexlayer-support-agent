@@ -6,6 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from backend.app.core.database import Base
 
@@ -51,3 +52,6 @@ class Client(Base):
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    usage_logs = relationship("UsageLog", back_populates="client")

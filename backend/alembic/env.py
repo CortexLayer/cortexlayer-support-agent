@@ -2,6 +2,12 @@
 
 import os
 import sys
+
+# Add the project root directory to PYTHONPATH
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 from logging.config import fileConfig
 
 from alembic import context
@@ -9,10 +15,10 @@ from sqlalchemy import engine_from_config, pool
 
 from backend.app.core.database import Base
 
-# Add the project root directory to PYTHONPATH
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if BASE_DIR not in sys.path:
-    sys.path.insert(0, BASE_DIR)
+# Import all models so Alembic can detect them
+from backend.app.models.client import Client
+from backend.app.models.usage import UsageLog
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
