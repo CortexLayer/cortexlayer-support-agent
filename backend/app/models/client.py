@@ -55,3 +55,6 @@ class Client(Base):
 
     # Relationships
     usage_logs = relationship("UsageLog", back_populates="client")
+    documents = relationship("Document", back_populates="client")
+    chat_logs = relationship("ChatLog", back_populates="client")
+    handoff_tickets = relationship("HandoffTicket", back_populates="client")

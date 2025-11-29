@@ -34,4 +34,5 @@ class Document(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
-    client = relationship("Client", backref="documents")
+    # relationships
+    client = relationship("Client", back_populates="documents")

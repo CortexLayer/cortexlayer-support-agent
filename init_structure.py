@@ -92,6 +92,7 @@ files = {
     "backend/app/routes/whatsapp.py": MODULE_PLACEHOLDER,
     "backend/app/routes/fallback.py": MODULE_PLACEHOLDER,
     "backend/app/routes/admin.py": MODULE_PLACEHOLDER,
+    "backend/app/routes/webhook.py": MODULE_PLACEHOLDER,
     # Ingestion
     "backend/app/ingestion/pdf_reader.py": MODULE_PLACEHOLDER,
     "backend/app/ingestion/text_reader.py": MODULE_PLACEHOLDER,
@@ -111,6 +112,7 @@ files = {
     "backend/app/services/whatsapp_service.py": MODULE_PLACEHOLDER,
     "backend/app/services/email_service.py": MODULE_PLACEHOLDER,
     "backend/app/services/handoff_service.py": MODULE_PLACEHOLDER,
+    "backend/app/services/stripe_service.py": MODULE_PLACEHOLDER,
     # Utils
     "backend/app/utils/file_utils.py": MODULE_PLACEHOLDER,
     "backend/app/utils/rate_limit.py": MODULE_PLACEHOLDER,

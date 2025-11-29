@@ -41,4 +41,4 @@ class HandoffTicket(Base):
     resolved_at = Column(DateTime, nullable=True)
 
     # Relationship
-    client = relationship("Client", backref="handoff_tickets")
+    client = relationship("Client", back_populates="handoff_tickets")

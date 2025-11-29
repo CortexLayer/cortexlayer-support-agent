@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import settings
 from backend.app.routes import auth
+from backend.app.routes.webhook import router as webhook_router
 from backend.app.utils.logger import logger
 
 # Initialize Sentry
@@ -15,6 +16,7 @@ if settings.SENTRY_DSN:
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 
 app.include_router(auth.router)
+app.include_router(webhook_router)
 
 # CORS
 app.add_middleware(
@@ -35,10 +37,10 @@ async def health_check():
 @app.on_event("startup")
 async def startup():
     """Executed when application is starting."""
-    logger.info("🚀 CortexLayer Support Agent starting up...")
+    logger.info("CortexLayer Support Agent starting up...")
 
 
 @app.on_event("shutdown")
 async def shutdown():
     """Executed when application is shutting down."""
-    logger.info("🛑 CortexLayer Support Agent shutting down...")
+    logger.info("CortexLayer Support Agent shutting down...")

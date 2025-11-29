@@ -198,6 +198,7 @@ cortexlayer-support-agent/
 │   │   │   ├── query.py             # RAG chat endpoint
 │   │   │   ├── whatsapp.py          # WhatsApp webhook endpoint
 │   │   │   ├── fallback.py          # Email fallback route
+|   |   |   ├── webhook.py           # stripe webhook
 │   │   │   └── admin.py             # Analytics + backoffice APIs
 │   │   │
 │   │   ├── ingestion/               # Raw ingestion → text → chunks → embeddings
@@ -220,6 +221,7 @@ cortexlayer-support-agent/
 │   │   │   ├── client_manager.py    # CRUD & account ops
 │   │   │   ├── whatsapp_service.py  # WhatsApp processing pipeline
 │   │   │   ├── email_service.py     # Email fallback delivery
+|   |   |   ├── stripe_service.py    # customer and subscription handling 
 │   │   │   └── handoff_service.py   # Escalation logic
 │   │   │
 │   │   └── utils/                   # Generic helpers

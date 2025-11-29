@@ -48,4 +48,4 @@ class ChatLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
 
     # Relationship
-    client = relationship("Client", backref="chat_logs")
+    client = relationship("Client", back_populates="chat_logs")
