@@ -16,12 +16,6 @@ from sqlalchemy import engine_from_config, pool
 from backend.app.core.database import Base
 
 # Import all models so Alembic can detect them
-from backend.app.models.client import Client
-from backend.app.models.usage import UsageLog
-from backend.app.models.documents import Document
-from backend.app.models.chat_logs import ChatLog
-from backend.app.models.handoff import HandoffTicket
-
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
