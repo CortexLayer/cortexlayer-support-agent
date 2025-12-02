@@ -8,6 +8,7 @@ from backend.app.core.config import settings
 from backend.app.routes import auth
 from backend.app.routes.webhook import router as webhook_router
 from backend.app.utils.logger import logger
+from backend.app.utils.redis_client import test_redis_connection
 
 # Initialize Sentry
 if settings.SENTRY_DSN:
@@ -38,6 +39,7 @@ async def health_check():
 async def startup():
     """Executed when application is starting."""
     logger.info("CortexLayer Support Agent starting up...")
+    test_redis_connection()
 
 
 @app.on_event("shutdown")
