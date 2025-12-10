@@ -87,15 +87,6 @@ docker compose logs -f
 
 ---
 
-## Environment Files
-
-- `.env.local` → Local development
-- `.env.production` → Production server
-
-Do not commit `.env.production`.
-
----
-
 ## Architecture
 
 Client → Cloudflare → Nginx → FastAPI
