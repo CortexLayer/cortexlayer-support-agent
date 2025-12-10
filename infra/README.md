@@ -20,7 +20,7 @@ Start containers:
 ```
 
 cd infra
-docker compose -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up --build -d
 
 ```
 
@@ -37,6 +37,14 @@ Reset database:
 ```
 
 docker compose -f docker-compose.dev.yml down -v
+
+```
+
+Logs:
+
+```
+
+docker compose logs -f
 
 ```
 
