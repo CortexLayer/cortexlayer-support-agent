@@ -1,21 +1,101 @@
-FROM python:3.10-slim AS base
+# CortexLayer Infrastructure
 
-WORKDIR /app
+This repository uses two separate Docker Compose configurations:
 
-# System dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+- `docker-compose.dev.yml` → Local development
+- `docker-compose.yml` → Production deployment
 
-# Install deps first (cache layer)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+Do NOT run the development compose on production servers.
 
-# Copy code
-COPY . .
+---
 
-EXPOSE 8000
+## Local Development
 
-# Use 4 workers (small servers)
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+Prerequisites:
+- Docker
+- Python 3.10
+
+Start containers:
+
+```
+
+cd infra
+docker compose -f docker-compose.dev.yml up --build
+
+```
+
+Stop:
+
+```
+
+docker compose -f docker-compose.dev.yml down
+
+```
+
+Reset database:
+
+```
+
+docker compose -f docker-compose.dev.yml down -v
+
+```
+
+Backend runs with live reload at:
+http://localhost:8000
+
+Database:
+
+localhost:5432\
+User: postgres\
+Password: postgres
+
+---
+
+## Production Deployment
+
+Production uses external services:
+
+- PostgreSQL = Railway
+- Redis = Upstash
+- Nginx = Reverse proxy
+- Cloudflare = SSL
+
+Start:
+
+```
+
+cd infra
+docker compose up -d
+
+```
+
+Stop:
+
+```
+
+docker compose down
+
+```
+
+Logs:
+
+```
+
+docker compose logs -f
+
+```
+
+---
+
+## Environment Files
+
+- `.env.local` → Local development
+- `.env.production` → Production server
+
+Do not commit `.env.production`.
+
+---
+
+## Architecture
+
+Client → Cloudflare → Nginx → FastAPI
