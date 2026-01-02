@@ -7,7 +7,7 @@ aggregated usage analytics for administrative and operational purposes.
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.app.core.database import get_db
 from backend.app.models.client import Client
@@ -17,22 +17,17 @@ from backend.app.services.analytics import get_usage_summary
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
-@router.get(
-    "/clients",
-    response_model=list[ClientResponse],
-)
+@router.get("/clients", response_model=list[ClientResponse])
 def list_clients(db: Session = Depends(get_db)):
-    """Return a list of all registered clients.
-
-    This endpoint is intended for internal administrative use only.
-
-    Args:
-        db: Database session dependency.
-
-    Returns:
-        A list of client records.
-    """
-    return db.query(Client).all()
+    """Return a list of all registered clients."""
+    return (
+        db.query(Client)
+        .options(
+            joinedload(Client.documents),
+            joinedload(Client.usage_logs),
+        )
+        .all()
+    )
 
 
 @router.get(

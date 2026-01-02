@@ -32,7 +32,7 @@ class UsageLog(Base):
     )
 
     # Operation details
-    operation_type = Column(String, nullable=False)  # query, embedding, whatsapp
+    operation_type = Column(String, nullable=False, index=True)
 
     # Token tracking
     input_tokens = Column(Integer, default=0)
