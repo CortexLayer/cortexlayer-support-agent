@@ -15,6 +15,7 @@ from backend.app.models.client import Client
 from backend.app.schemas.client import ClientResponse
 from backend.app.services.analytics import (
     get_cost_analytics,
+    get_document_analytics,
     get_query_analytics,
     get_usage_summary,
 )
@@ -97,6 +98,18 @@ def get_client_query_analytics(
     - Average confidence score
     """
     return get_query_analytics(
+        client_id=str(client_id),
+        db=db,
+    )
+
+
+@router.get("/analytics/documents/{client_id}")
+def get_client_document_analytics(
+    client_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Return document analytics for a client."""
+    return get_document_analytics(
         client_id=str(client_id),
         db=db,
     )
