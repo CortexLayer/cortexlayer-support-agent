@@ -3,12 +3,12 @@ version: '3.9'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: cortexlayer_postgres
+    container_name: supportagent_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: cortexlayer
+      POSTGRES_DB: supportagent
     ports:
       - "5433:5432"
     volumes:
@@ -16,7 +16,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: cortexlayer_redis
+    container_name: supportagent_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -25,12 +25,12 @@ services:
     build:
       context: ..
       dockerfile: backend/Dockerfile
-    container_name: cortexlayer_backend
+    container_name: supportagent_backend
     restart: unless-stopped
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cortexlayer
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/supportagent
       REDIS_URL: redis://redis:6379/0
     volumes:
       - ../backend:/app/backend

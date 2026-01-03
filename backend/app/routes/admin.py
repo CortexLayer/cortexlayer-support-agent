@@ -113,3 +113,38 @@ def get_client_document_analytics(
         client_id=str(client_id),
         db=db,
     )
+
+
+@router.get("/dashboard/{client_id}")
+def get_client_dashboard(
+    client_id: UUID,
+    days: int = 30,
+    db: Session = Depends(get_db),
+):
+    """Unified admin dashboard endpoint.
+
+    Returns usage, cost, document, and query analytics
+    for a single client in one response.
+    """
+    client_id_str = str(client_id)
+
+    return {
+        "usage": get_usage_summary(
+            client_id=client_id_str,
+            db=db,
+            days=days,
+        ),
+        "costs": get_cost_analytics(
+            client_id=client_id_str,
+            db=db,
+            days=days,
+        ),
+        "documents": get_document_analytics(
+            client_id=client_id_str,
+            db=db,
+        ),
+        "queries": get_query_analytics(
+            client_id=client_id_str,
+            db=db,
+        ),
+    }
