@@ -76,6 +76,51 @@ def get_cost_analytics(
     }
 
 
+def get_document_analytics(
+    client_id: str,
+    db: Session,
+) -> Dict[str, object]:
+    """Document-level analytics for a client.
+
+    - Total documents
+    - Total chunks
+    - Documents grouped by source type
+    """
+    # Total documents
+    total_documents: int = (db.query(func.count(Document.id))).filter(
+        Document.client_id == client_id
+    ).scalar() or 0
+
+    # Total chunks across all documents
+    total_chunks: int = (db.query(func.sum(Document.chunk_count))).filter(
+        Document.client_id == client_id
+    ).scalar() or 0
+
+    # Documents grouped by source type (pdf, txt, url)
+    by_type_rows = (
+        db.query(
+            Document.source_type.label("type"),
+            func.count(Document.id).label("count"),
+        )
+        .filter(Document.client_id == client_id)
+        .group_by(Document.source_type)
+        .order_by(func.count(Document.id).desc())
+        .all()
+    )
+
+    return {
+        "total_documents": total_documents,
+        "total_chunks": int(total_chunks),
+        "by_type": [
+            {
+                "type": row.type,
+                "count": int(row.count),
+            }
+            for row in by_type_rows
+        ],
+    }
+
+
 def get_usage_summary(
     client_id: str,
     db: Session,
