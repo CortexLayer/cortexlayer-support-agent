@@ -15,6 +15,67 @@ from backend.app.models.documents import Document
 from backend.app.models.usage import UsageLog
 
 
+def get_cost_analytics(
+    client_id: str,
+    db: Session,
+    days: int = 30,
+) -> Dict:
+    """Cost analytics for a client.
+
+    - Daily cost trend
+    - Cost grouped by model
+    """
+    since = datetime.utcnow() - timedelta(days=days)
+
+    # Daily cost trend
+    daily_costs = (
+        db.query(
+            func.date(UsageLog.timestamp).label("date"),
+            func.sum(UsageLog.cost_usd).label("cost"),
+        )
+        .filter(
+            UsageLog.client_id == client_id,
+            UsageLog.timestamp >= since,
+        )
+        .group_by(func.date(UsageLog.timestamp))
+        .order_by(func.date(UsageLog.timestamp))
+        .all()
+    )
+
+    # Cost by model
+    cost_by_model = (
+        db.query(
+            UsageLog.model_used.label("model"),
+            func.sum(UsageLog.cost_usd).label("cost"),
+        )
+        .filter(
+            UsageLog.client_id == client_id,
+            UsageLog.timestamp >= since,
+        )
+        .group_by(UsageLog.model_used)
+        .order_by(func.sum(UsageLog.cost_usd).desc())
+        .all()
+    )
+
+    return {
+        "period_days": days,
+        "daily_costs": [
+            {
+                "date": str(row.date),
+                "cost_usd": float(row.cost or 0),
+            }
+            for row in daily_costs
+        ],
+        "cost_by_model": [
+            {
+                "model": row.model or "unknown",
+                "cost_usd": float(row.cost or 0),
+            }
+            for row in cost_by_model
+        ],
+    }
+
+
 def get_usage_summary(
     client_id: str,
     db: Session,
