@@ -309,7 +309,7 @@ META_WHATSAPP_TOKEN=
 ### Docker:
 
 ```
-docker-compose up --build
+docker compose -f docker-compose.dev.yml up --build -d
 ```
 
 ### Without Docker:
@@ -387,4 +387,5 @@ Backend ensures no plan abuse or cost leaks.
 * Structured logging
 * Daily DB + FAISS snapshots
 * Stripe webhook logs
+
 
