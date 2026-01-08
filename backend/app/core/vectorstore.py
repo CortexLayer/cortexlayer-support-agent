@@ -13,6 +13,7 @@ from backend.app.utils.s3 import download_file, upload_file
 # in-memory cache
 _index_cache: Dict[str, Tuple[faiss.Index, List[Dict]]] = {}
 
+USE_MOCK = os.getenv("USE_MOCK_EMBEDDINGS", "").lower() == "true"
 
 def _get_index_path(client_id: str) -> str:
     """Local file path for FAISS index."""
@@ -80,13 +81,23 @@ def save_index(client_id: str, index: faiss.Index, metadata: List[Dict]) -> None
 
 def load_index(client_id: str) -> Tuple[faiss.Index, List[Dict]]:
     """Load index from cache, local, or S3."""
+
+    # 1️⃣ In-memory cache
     if client_id in _index_cache:
         return _index_cache[client_id]
 
+    # 2️⃣ MOCK MODE → create empty local index
+    if USE_MOCK:
+        logger.warning("⚠️ MOCK MODE: creating empty FAISS index (no S3)")
+        index = create_index()
+        metadata: List[Dict] = []
+        _index_cache[client_id] = (index, metadata)
+        return index, metadata
+
+    # 3️⃣ REAL MODE → existing behavior
     index_path = _get_index_path(client_id)
     meta_path = _get_metadata_path(client_id)
 
-    # If local files missing, try S3 download
     if not os.path.exists(index_path) or not os.path.exists(meta_path):
         try:
             data = download_file(f"indexes/{client_id}.index")
@@ -100,13 +111,13 @@ def load_index(client_id: str) -> Tuple[faiss.Index, List[Dict]]:
             logger.error("Failed to load index: %s", e)
             raise
 
-    # Load from disk
     index = faiss.read_index(index_path)
     with open(meta_path, "rb") as f:
         metadata = pickle.load(f)
 
     _index_cache[client_id] = (index, metadata)
     return index, metadata
+
 
 
 def search_index(
@@ -127,9 +138,12 @@ def search_index(
 
     results = []
     for i, idx in enumerate(indices[0]):
-        if idx < len(metadata):
-            m = metadata[idx].copy()
-            m["score"] = float(1 / (1 + distances[0][i]))
-            results.append(m)
+        if idx < 0 or idx >= len(metadata):
+            continue
+
+        m = metadata[idx].copy()
+        m["score"] = float(1 / (1 + distances[0][i]))
+        results.append(m)
+
 
     return results
