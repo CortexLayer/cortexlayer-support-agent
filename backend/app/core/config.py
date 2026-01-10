@@ -24,9 +24,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # AI APIs
+    # AI APIs and models
     OPENAI_API_KEY: str
     GROQ_API_KEY: str
+    HF_EBD_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
+    OPENAI_EBD_MODEL: str = "text-embedding-3-small"
 
     # Storage
     DO_SPACES_KEY: str
