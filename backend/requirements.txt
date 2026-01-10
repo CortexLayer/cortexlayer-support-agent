@@ -16,6 +16,8 @@ faiss-cpu==1.7.4
 langchain==0.1.16
 langchain-community==0.0.33
 langchain-openai==0.0.8
+sentence-transformers==2.6.1
+torch>=2.0.0
 
 # Tokenization
 tiktoken==0.6.0

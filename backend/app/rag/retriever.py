@@ -1,7 +1,10 @@
+"""Auto-generated placeholder module for CortexLayer        Backend."""
 from typing import List, Dict
-from backend.app.ingestion.embedder import get_embeddings
+# from backend.app.ingestion.embedder import get_embeddings
 from backend.app.core.vectorstore import search_index
 from backend.app.utils.logger import logger
+
+from backend.app.ingestion.embedder_hf import get_embeddings
 
 
 async def retrieve_relevant_chunks(
@@ -24,14 +27,28 @@ async def retrieve_relevant_chunks(
 
     # Step 1: Embed the query
     try:
-        embeddings, _ = await get_embeddings(
-            texts=[query],
-            model="text-embedding-3-small"
-        )
+        # embeddings, _ = await get_embeddings(
+        #     texts=[query],
+        #     model="text-embedding-3-small"
+        # )
+        # query_embedding = embeddings[0]
+        
+        embeddings, _ = await get_embeddings(texts=[query])
         query_embedding = embeddings[0]
+
     except Exception as e:
-        logger.error(f"❌ Query embedding failed: {e}")
+        error_msg = str(e).lower()
+
+        if "insufficient_quota" in error_msg or "quota" in error_msg:
+            logger.error(
+                "❌ Embedding quota exhausted. "
+                "Retriever returning empty context."
+            )
+        else:
+            logger.error(f"❌ Query embedding failed: {e}")
+
         return []
+
 
     # Step 2: Search FAISS index
     try:
