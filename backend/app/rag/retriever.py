@@ -1,10 +1,9 @@
-"""Auto-generated placeholder module for CortexLayer        Backend."""
+"""Core retirever module for RAG Pipeline."""
+
 from typing import List, Dict
-# from backend.app.ingestion.embedder import get_embeddings
+from backend.app.ingestion.embedder import get_embeddings
 from backend.app.core.vectorstore import search_index
 from backend.app.utils.logger import logger
-
-from backend.app.ingestion.embedder_hf import get_embeddings
 
 
 async def retrieve_relevant_chunks(
@@ -26,29 +25,10 @@ async def retrieve_relevant_chunks(
         return []
 
     # Step 1: Embed the query
-    try:
-        # embeddings, _ = await get_embeddings(
-        #     texts=[query],
-        #     model="text-embedding-3-small"
-        # )
-        # query_embedding = embeddings[0]
-        
-        embeddings, _ = await get_embeddings(texts=[query])
-        query_embedding = embeddings[0]
-
-    except Exception as e:
-        error_msg = str(e).lower()
-
-        if "insufficient_quota" in error_msg or "quota" in error_msg:
-            logger.error(
-                "❌ Embedding quota exhausted. "
-                "Retriever returning empty context."
-            )
-        else:
-            logger.error(f"❌ Query embedding failed: {e}")
-
-        return []
-
+    embeddings, _ = await get_embeddings(
+        texts=[query]
+    )
+    query_embedding = embeddings[0]
 
     # Step 2: Search FAISS index
     try:
@@ -58,7 +38,7 @@ async def retrieve_relevant_chunks(
             top_k=top_k
         )
     except Exception as e:
-        logger.error(f"❌ FAISS search failed: {e}")
+        logger.error(f"FAISS search failed: {e}")
         return []
 
     # Step 3: Post-process results
@@ -74,7 +54,7 @@ async def retrieve_relevant_chunks(
         })
 
     logger.info(
-        f"🔍 Retrieved {len(cleaned_results)} chunks for client={client_id}"
+        f"Retrieved {len(cleaned_results)} chunks for client={client_id}"
     )
 
     return cleaned_results
