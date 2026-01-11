@@ -1,39 +1,48 @@
-"""Pytest fixtures using a temporary PostgreSQL instance."""
+"""Pytest fixtures using the Docker PostgreSQL database.
+
+Integration tests require the postgres container to be running.
+"""
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from backend.app.core.config import settings
 from backend.app.core.database import Base
 
 
-@pytest.fixture(scope="function")
-def db(postgresql):
-    """Use pytest-postgresql ephemeral PostgreSQL instance.
+@pytest.fixture(scope="session")
+def engine():
+    """Create a single engine for the entire test session.
 
-    Provides full PostgreSQL support: JSONB, UUID, etc.
+    Uses DATABASE_URL (Docker Postgres).
     """
-    host = postgresql.info.host
-    port = postgresql.info.port
-    user = postgresql.info.user
-    password = postgresql.info.password
-    dbname = postgresql.info.dbname
+    engine = create_engine(settings.DATABASE_URL)
 
-    url = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}"
-
-    engine = create_engine(url)
-
+    # Create all tables once
     Base.metadata.create_all(bind=engine)
 
-    TestingSessionLocal = sessionmaker(
+    yield engine
+
+    # Optional cleanup (safe to keep, safe to remove)
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(scope="function")
+def db(engine):
+    """Provide a transactional database session per test.
+
+    Rolls back after each test.
+    """
+    SessionLocal = sessionmaker(
         autocommit=False,
         autoflush=False,
         bind=engine,
     )
 
-    session = TestingSessionLocal()
+    session = SessionLocal()
     try:
         yield session
     finally:
+        session.rollback()
         session.close()
-        Base.metadata.drop_all(bind=engine)
