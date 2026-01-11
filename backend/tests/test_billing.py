@@ -5,6 +5,8 @@ import uuid
 from backend.app.models.client import Client
 from backend.app.models.usage import UsageLog
 from backend.app.services import billing as billing_svc
+import pytest
+pytestmark = pytest.mark.integration
 
 
 def test_embedding_cost_basic() -> None:

@@ -7,6 +7,8 @@ from backend.app.models.client import BillingStatus, Client, PlanType
 from backend.app.models.usage import UsageLog
 from backend.app.services.overage import check_and_bill_overages
 from backend.tests.utils.mock_stripe import mock_stripe_success
+import pytest
+pytestmark = pytest.mark.integration
 
 
 def test_overage_soft_cap_creates_invoice(db, monkeypatch) -> None:

@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 
 from backend.app.models.client import BillingStatus, Client
 from backend.app.services.grace import enforce_grace_period
+import pytest
+pytestmark = pytest.mark.integration
 
 
 def test_grace_period_disables_old_clients(db) -> None:

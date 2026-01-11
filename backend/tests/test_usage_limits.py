@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 import pytest
+pytestmark = pytest.mark.integration
 
 from backend.app.models.client import Client, PlanType
 from backend.app.models.usage import UsageLog

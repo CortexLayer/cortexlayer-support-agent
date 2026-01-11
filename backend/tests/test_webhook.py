@@ -6,6 +6,8 @@ from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 
 from backend.app.main import app
+import pytest
+pytestmark = pytest.mark.integration
 
 
 def test_webhook_invoice_paid(monkeypatch, db) -> None:
