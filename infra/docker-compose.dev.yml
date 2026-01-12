@@ -32,6 +32,8 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/supportagent
       REDIS_URL: redis://redis:6379/0
+      ADMIN_API_KEY: test-admin-key
+
     volumes:
       - ../backend:/app/backend
     working_dir: /app
