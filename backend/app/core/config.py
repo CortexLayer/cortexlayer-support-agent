@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "CortexLayer Support Agent"
     DEBUG: bool = False
+    ADMIN_API_KEY: str = ""
+    SENDGRID_API_KEY: str = ""
+
+
+
 
     # Database
     DATABASE_URL: str

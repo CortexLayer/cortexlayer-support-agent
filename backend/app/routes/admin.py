@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from backend.app.core.database import get_db
 from backend.app.models.client import Client
+from backend.app.dependencies.admin_auth import require_admin
 from backend.app.schemas.client import ClientResponse
 from backend.app.services.analytics import (
     get_cost_analytics,
@@ -20,7 +21,11 @@ from backend.app.services.analytics import (
     get_usage_summary,
 )
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(
+    prefix="/admin",
+    tags=["Admin"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 # Client Management
