@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from backend.app.core.database import Base
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 
 
 class UsageLog(Base):
@@ -9,7 +11,7 @@ class UsageLog(Base):
 
 
     id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(String, ForeignKey("clients.id"), nullable=False)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False)
 
     operation_type = Column(String, nullable=False)
     embedding_tokens = Column(Integer, default=0)

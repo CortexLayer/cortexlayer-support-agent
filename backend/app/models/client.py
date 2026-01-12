@@ -7,6 +7,8 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from backend.app.models.usage import UsageLog
+
 
 from backend.app.core.database import Base
 
@@ -54,7 +56,7 @@ class Client(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    usage_logs = relationship("UsageLog", back_populates="client")
+    usage_logs = relationship(UsageLog, back_populates="client")
     documents = relationship("Document", back_populates="client")
     chat_logs = relationship("ChatLog", back_populates="client")
     handoff_tickets = relationship("HandoffTicket", back_populates="client")
