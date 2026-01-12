@@ -9,6 +9,8 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.app.core.config import settings
 from backend.app.core.database import Base
+from fastapi.testclient import TestClient
+from backend.app.main import app
 
 
 @pytest.fixture(scope="session")
@@ -46,3 +48,8 @@ def db(engine):
     finally:
         session.rollback()
         session.close()
+
+
+@pytest.fixture(scope="function")
+def client():
+    return TestClient(app)
