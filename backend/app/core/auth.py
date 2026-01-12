@@ -17,7 +17,8 @@ from backend.app.models.client import Client
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Token extractor (reads Authorization: Bearer <token>)
-security = HTTPBearer()
+
+security = HTTPBearer(auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -63,10 +64,16 @@ def decode_token(token: str) -> dict:
 
 
 async def get_current_client(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
     db: Annotated[Session, Depends(get_db)],
 ) -> Client:
     """Return currently authenticated client from DB."""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authenticated - missing Authorization header",
+        )
+
     token = credentials.credentials
     payload = decode_token(token)
     client_id = payload.get("sub")
