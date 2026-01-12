@@ -41,7 +41,7 @@ def test_webhook_invoice_paid(monkeypatch, db) -> None:
         mock_construct,
     )
 
-    client_api = TestClient(app)
+    client_api = TestClient(app, base_url="http://localhost")
     response = client_api.post(
         "/webhook/stripe",
         data=json.dumps(event),  # payload doesn't matter; we mock construct_event
