@@ -1,3 +1,5 @@
+"""Handoff ticket creation and escalation logic."""
+
 from sqlalchemy.orm import Session
 from backend.app.models.handoff import HandoffTicket, HandoffStatus
 from backend.app.utils.logger import logger
@@ -26,7 +28,7 @@ def create_handoff_ticket(
     db.commit()
     db.refresh(ticket)
 
-    logger.info(f"🎫 Created handoff ticket {ticket.id}")
+    logger.info(f"Created handoff ticket {ticket.id}")
 
     return ticket
 
@@ -36,3 +38,4 @@ def should_escalate(confidence: float, threshold: float = 0.3) -> bool:
     Decide if a query should be escalated to human support
     """
     return confidence < threshold
+
