@@ -15,6 +15,7 @@ def test_create_handoff_ticket(db):
     )
     db.add(client)
     db.commit()
+    db.refresh(client)
 
     # Create handoff ticket
     ticket = create_handoff_ticket(
@@ -26,5 +27,9 @@ def test_create_handoff_ticket(db):
 
     # Assertions
     assert ticket.client_id == client.id
+
+    assert ticket.query_text == "What is quantum gravity?"
+    assert ticket.context == "AI response was unclear"
+
     assert ticket.status == HandoffStatus.OPEN
     assert ticket.status.value == "open"
