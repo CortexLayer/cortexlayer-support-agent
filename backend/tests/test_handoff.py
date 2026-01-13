@@ -6,7 +6,7 @@ from backend.app.services.handoff_service import create_handoff_ticket
 
 
 def test_create_handoff_ticket(db):
-    # 1️⃣ Create a real client
+    # Create a real client
     client = Client(
         id=uuid.uuid4(),
         email="handoff@test.com",
@@ -16,7 +16,7 @@ def test_create_handoff_ticket(db):
     db.add(client)
     db.commit()
 
-    # 2️⃣ Create handoff ticket
+    # Create handoff ticket
     ticket = create_handoff_ticket(
         client_id=client.id,
         query="What is quantum gravity?",
@@ -24,7 +24,7 @@ def test_create_handoff_ticket(db):
         db=db
     )
 
-    # 3️⃣ Assertions
+    # Assertions
     assert ticket.client_id == client.id
     assert ticket.status == HandoffStatus.OPEN
     assert ticket.status.value == "open"
