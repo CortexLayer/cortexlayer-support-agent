@@ -8,7 +8,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from backend.app.core.config import settings
 from backend.app.middleware.logging import log_requests
-from backend.app.routes import admin, auth, query
+from backend.app.routes import admin, auth, query, upload
 from backend.app.routes.webhook import router as webhook_router
 from backend.app.utils.logger import logger
 from backend.app.utils.redis_client import test_redis_connection
@@ -54,6 +54,7 @@ app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(webhook_router)
 app.include_router(query.router)
+app.include_router(upload.router)
 
 
 @app.get("/health")

@@ -3,7 +3,7 @@
 from io import BytesIO
 
 from pdfminer.high_level import extract_text as pdfminer_extract
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 
 from backend.app.utils.logger import logger
 
