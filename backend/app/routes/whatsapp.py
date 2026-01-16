@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 
 from backend.app.core.config import settings
 from backend.app.schemas.whatsapp import WhatsAppWebhook
+from backend.app.services.whatsapp_service import process_whatsapp_message
 from backend.app.utils.logger import logger
 
 router = APIRouter(prefix="/whatsapp", tags=["WhatsApp"])
@@ -55,6 +56,6 @@ async def receive_message(request: Request):
     for entry in webhook.entry:
         for change in entry.changes:
             if change.get("field") == "messages":
-                logger.info("WhatsApp message event received")
+                await process_whatsapp_message(change.get("value", {}))
 
     return {"status": "ok"}
