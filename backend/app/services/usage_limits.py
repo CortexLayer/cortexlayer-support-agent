@@ -107,3 +107,41 @@ def check_file_size(file_size_bytes: int, plan_type: PlanType) -> bool:
         )
 
     return True
+
+
+def check_whatsapp_limit(client: Client, db: Session) -> bool:
+    """Ensure client has not exceeded monthly WhatsApp message usage."""
+    limits = get_plan_limits(client.plan_type)
+
+    max_messages = limits.get("whatsapp_messages", 0)
+    if max_messages == 0:
+        raise HTTPException(
+            status_code=403,
+            detail="WhatsApp support is not available on your plan.",
+        )
+
+    start = datetime.utcnow().replace(
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+
+    used_messages = (
+        db.query(func.count(UsageLog.id))
+        .filter(
+            UsageLog.client_id == client.id,
+            UsageLog.operation_type == "whatsapp",
+            UsageLog.timestamp >= start,
+        )
+        .scalar()
+    )
+
+    if used_messages >= max_messages:
+        raise HTTPException(
+            status_code=429,
+            detail="Monthly WhatsApp message limit exceeded.",
+        )
+
+    return True
