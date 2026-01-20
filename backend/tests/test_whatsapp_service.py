@@ -7,7 +7,7 @@ from backend.app.services.whatsapp_service import process_whatsapp_message
 
 @pytest.mark.asyncio
 async def test_process_whatsapp_text_message(monkeypatch):
-    """Ensure text messages are processed without crashing."""
+    """Text WhatsApp messages are processed without crashing."""
 
     async def fake_rag_pipeline(*args, **kwargs):
         return {
@@ -36,7 +36,7 @@ async def test_process_whatsapp_text_message(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_ignore_non_text_message():
-    """Ensure non-text messages are ignored."""
+    """Non-text WhatsApp messages are ignored."""
     payload = {
         "messages": [
             {

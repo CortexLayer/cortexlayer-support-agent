@@ -27,7 +27,7 @@ def test_webhook_verification_success():
 
 
 def test_webhook_verification_failure():
-    """Webhook verification fails with incorrect token."""
+    """Webhook verification fails with wrong token."""
     response = client.get(
         "/whatsapp/webhook",
         params={
@@ -45,7 +45,7 @@ def test_webhook_post_invalid_signature():
     """POST webhook rejects invalid signature."""
     response = client.post(
         "/whatsapp/webhook",
-        headers={"X-Hub-Signature-256": "sha256=fake"},
+        headers={"X-Hub-Signature-256": "sha256=invalid"},
         json={},
     )
 
@@ -53,7 +53,7 @@ def test_webhook_post_invalid_signature():
     assert response.json()["detail"] == "Invalid webhook signature"
 
 
-def test_webhook_post_valid_signature_but_invalid_payload():
+def test_webhook_post_valid_signature_invalid_payload():
     """Valid signature but malformed payload is ignored safely."""
     body = b"{}"
 
