@@ -1,7 +1,9 @@
 """WhatsApp message processing service."""
 
+from datetime import datetime
 from typing import Dict
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import SessionLocal
@@ -66,14 +68,14 @@ async def process_whatsapp_message(webhook_value: Dict) -> None:
         usage_log = UsageLog(
             client_id=client.id,
             operation_type="whatsapp",
-            input_tokens=0,
-            output_tokens=0,
-            cost_usd=0.0,
-            model_used="rag",
+            timestamp=datetime.utcnow(),
         )
         db.add(usage_log)
 
         db.commit()
+
+    except HTTPException:
+        raise
 
     except Exception as exc:
         logger.error(f"WhatsApp processing failed: {exc}")

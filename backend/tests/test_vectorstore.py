@@ -1,6 +1,5 @@
 """Tests for FAISS vectorstore."""
 
-import os
 from pathlib import Path
 from tempfile import gettempdir
 
@@ -9,18 +8,19 @@ import pytest
 
 import backend.app.core.vectorstore as vs
 
+BASE_TMP_DIR = Path(gettempdir()) / "faiss_test"
+BASE_TMP_DIR.mkdir(parents=True, exist_ok=True)
+
 
 @pytest.fixture(autouse=True)
 def cleanup_tmp_files():
-    """Remove any temporary FAISS files after each test."""
+    """Remove temporary FAISS files after each test."""
     yield
-    tmp = gettempdir()
-    for fname in os.listdir(tmp):
-        if fname.startswith("fa_"):
-            try:
-                os.remove(os.path.join(tmp, fname))
-            except Exception:
-                pass
+    for file in BASE_TMP_DIR.glob("*"):
+        try:
+            file.unlink()
+        except Exception:
+            pass
 
 
 def test_create_index_and_add_search(monkeypatch):
@@ -28,12 +28,12 @@ def test_create_index_and_add_search(monkeypatch):
     monkeypatch.setattr(
         vs,
         "_get_index_path",
-        lambda cid: str(Path(gettempdir()) / f"fa_{cid}.idx"),
+        lambda cid: str(BASE_TMP_DIR / f"fa_{cid}.idx"),
     )
     monkeypatch.setattr(
         vs,
         "_get_metadata_path",
-        lambda cid: str(Path(gettempdir()) / f"fa_{cid}.meta"),
+        lambda cid: str(BASE_TMP_DIR / f"fa_{cid}.meta"),
     )
 
     monkeypatch.setattr(
@@ -44,9 +44,10 @@ def test_create_index_and_add_search(monkeypatch):
 
     emb1 = [0.1, 0.0, 0.0]
     emb2 = [0.2, 0.1, 0.0]
-    meta = [{"id": 1}, {"id": 2}]
 
-    vs.add_to_index("c1", [emb1, emb2], meta)
+    metadata = [{"id": 1}, {"id": 2}]
+
+    vs.add_to_index("c1", [emb1, emb2], metadata)
 
     results = vs.search_index("c1", emb1, top_k=2)
 
