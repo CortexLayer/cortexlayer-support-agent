@@ -1,5 +1,6 @@
 """Tests for WhatsApp usage limits."""
 
+import uuid
 from datetime import datetime
 
 import pytest
@@ -46,7 +47,7 @@ def test_growth_plan_whatsapp_allowed_when_empty(db):
 def test_whatsapp_limit_exceeded(db):
     """Growth plan blocked after exceeding WhatsApp limit."""
     client = Client(
-        email="limit@test.com",
+        email=f"limit-{uuid.uuid4()}@test.com",
         hashed_password="x",
         company_name="Limit Corp",
         plan_type=PlanType.GROWTH,

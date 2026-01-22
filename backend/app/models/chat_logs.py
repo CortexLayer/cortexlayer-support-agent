@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    JSON,
     Column,
     DateTime,
     Float,
@@ -12,7 +13,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from backend.app.core.database import Base
@@ -31,21 +32,16 @@ class ChatLog(Base):
         index=True,
     )
 
-    # Text
     query_text = Column(Text, nullable=False)
     response_text = Column(Text, nullable=False)
 
-    # RAG metadata
-    retrieved_chunks = Column(JSONB, nullable=True)
+    retrieved_chunks = Column(JSON, nullable=True)
     confidence_score = Column(Float, nullable=True)
 
-    # Performance data
     latency_ms = Column(Integer, nullable=True)
 
-    # Source channel
-    channel = Column(String, default="api")  # api, whatsapp, widget
+    channel = Column(String, default="api")
 
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
 
-    # Relationship
     client = relationship("Client", back_populates="chat_logs")

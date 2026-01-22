@@ -1,37 +1,41 @@
-"""Tests conftest."""
+"""Pytest fixtures using the Docker PostgreSQL database.
+
+Integration tests require the postgres container to be running.
+"""
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.app.core.database import Base, get_db
+from backend.app.core.config import settings
+from backend.app.core.database import Base
 from backend.app.main import app
-
-# ❗ DO NOT use :memory:
-TEST_DATABASE_URL = "sqlite:///./test.db"
 
 
 @pytest.fixture(scope="session")
 def engine():
-    """Create a single shared SQLite engine for all tests."""
-    engine = create_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-    )
+    """Create a single engine for the entire test session.
 
-    # Clean slate
-    Base.metadata.drop_all(bind=engine)
+    Uses DATABASE_URL (Docker Postgres).
+    """
+    engine = create_engine(settings.DATABASE_URL)
+
+    # Create all tables once
     Base.metadata.create_all(bind=engine)
 
     yield engine
 
+    # Optional cleanup (safe to keep, safe to remove)
     Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(scope="function")
 def db(engine):
-    """Provide a transactional DB session per test."""
+    """Provide a transactional database session per test.
+
+    Rolls back after each test.
+    """
     SessionLocal = sessionmaker(
         autocommit=False,
         autoflush=False,
@@ -44,18 +48,6 @@ def db(engine):
     finally:
         session.rollback()
         session.close()
-
-
-@pytest.fixture(autouse=True)
-def override_get_db(db):
-    """Force FastAPI to use the test DB session."""
-
-    def _get_test_db():
-        yield db
-
-    app.dependency_overrides[get_db] = _get_test_db
-    yield
-    app.dependency_overrides.clear()
 
 
 @pytest.fixture(scope="function")
