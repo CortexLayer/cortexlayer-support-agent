@@ -2,12 +2,21 @@
 
 import uuid
 from datetime import datetime
+from enum import Enum
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from backend.app.core.database import Base
+
+
+class DocumentStatus(str, Enum):
+    """Document processing status."""
+
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
 
 
 class Document(Base):
@@ -24,15 +33,21 @@ class Document(Base):
     )
 
     filename = Column(String, nullable=False)
-    source_type = Column(String, nullable=False)  # pdf, txt, url
+    source_type = Column(String, nullable=False)
     source_url = Column(String, nullable=True)
 
     file_size_bytes = Column(Integer, nullable=False)
     chunk_count = Column(Integer, default=0)
 
+    status = Column(
+        String,
+        nullable=False,
+        default=DocumentStatus.PROCESSING.value,
+        index=True,
+    )
+
     s3_key = Column(String, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
-    # relationships
     client = relationship("Client", back_populates="documents")

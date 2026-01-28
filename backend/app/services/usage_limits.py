@@ -145,3 +145,30 @@ def check_whatsapp_limit(client: Client, db: Session) -> bool:
         )
 
     return True
+
+
+def check_chunk_limit(chunk_count: int, plan_type: PlanType) -> bool:
+    """Validate chunk count against plan limits.
+
+    Args:
+        chunk_count: Number of chunks in the document.
+        plan_type: Client's plan type.
+
+    Returns:
+        True if within limits.
+
+    Raises:
+        HTTPException: If chunk count exceeds plan limit.
+    """
+    limits = get_plan_limits(plan_type)
+    max_chunks = limits["max_chunks_per_doc"]
+
+    if chunk_count > max_chunks:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Document has {chunk_count} chunks, but your plan "
+            f"allows max {max_chunks} chunks per document. "
+            f"Please reduce document size or upgrade your plan.",
+        )
+
+    return True
