@@ -1,5 +1,7 @@
 """LLM answer generation with provider fallback and usage tracking."""
 
+from __future__ import annotations
+
 import asyncio
 from typing import Tuple
 
@@ -22,9 +24,9 @@ def _call_groq(prompt: str, max_tokens: int):
     )
 
 
-def _call_openai(prompt: str, max_tokens: int):
+def _call_openai(prompt: str, model: str, max_tokens: int):
     return openai_client.chat.completions.create(
-        model=settings.OPENAI_MODEL,
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=max_tokens,
         temperature=0.3,
@@ -36,52 +38,54 @@ async def generate_answer(
     model_preference: str = "groq",
     max_tokens: int = 500,
 ) -> Tuple[str, dict]:
-    """Generate an answer using LLMs with safe async fallback."""
-    usage_stats = {
-        "model_used": None,
+    """Generate an answer using LLMs with plan-aware fallback."""
+    usage = {
+        "model_used": "none",
         "input_tokens": 0,
         "output_tokens": 0,
         "cost_usd": 0.0,
     }
 
-    if model_preference == "groq":
-        try:
-            response = await asyncio.to_thread(_call_groq, prompt, max_tokens)
+    async def run_groq():
+        return await asyncio.to_thread(_call_groq, prompt, max_tokens)
 
-            answer = response.choices[0].message.content
-            usage_stats["model_used"] = settings.GROQ_MODEL
-            usage_stats["input_tokens"] = response.usage.prompt_tokens
-            usage_stats["output_tokens"] = response.usage.completion_tokens
-
-            input_tokens = usage_stats["input_tokens"]
-            output_tokens = usage_stats["output_tokens"]
-
-            usage_stats["cost_usd"] = (input_tokens / 1_000_000) * 0.27 + (
-                output_tokens / 1_000_000
-            ) * 0.27
-
-            return answer, usage_stats
-
-        except Exception as e:
-            logger.warning(f"Groq failed, falling back to OpenAI: {e}")
+    async def run_openai(model: str):
+        return await asyncio.to_thread(_call_openai, prompt, model, max_tokens)
 
     try:
-        response = await asyncio.to_thread(_call_openai, prompt, max_tokens)
+        if model_preference in {"groq", "groq_with_fallback"}:
+            try:
+                response = await run_groq()
+                usage["model_used"] = settings.GROQ_MODEL
+            except Exception as exc:
+                if model_preference == "groq":
+                    raise
+                logger.warning("Groq failed, falling back to OpenAI: %s", exc)
+                response = await run_openai(settings.OPENAI_MODEL)
+                usage["model_used"] = settings.OPENAI_MODEL
 
-        answer = response.choices[0].message.content
-        usage_stats["model_used"] = settings.OPENAI_MODEL
-        usage_stats["input_tokens"] = response.usage.prompt_tokens
-        usage_stats["output_tokens"] = response.usage.completion_tokens
+        elif model_preference == "openai_gpt4":
+            response = await run_openai(settings.OPENAI_MODEL)
+            usage["model_used"] = settings.OPENAI_MODEL
 
-        input_tokens = usage_stats["input_tokens"]
-        output_tokens = usage_stats["output_tokens"]
+        else:
+            response = await run_openai(settings.OPENAI_MODEL)
+            usage["model_used"] = settings.OPENAI_MODEL
 
-        usage_stats["cost_usd"] = (input_tokens / 1_000_000) * 0.15 + (
-            output_tokens / 1_000_000
-        ) * 0.60
+        usage["input_tokens"] = response.usage.prompt_tokens
+        usage["output_tokens"] = response.usage.completion_tokens
 
-        return answer, usage_stats
+        total_tokens = usage["input_tokens"] + usage["output_tokens"]
 
-    except Exception as e:
-        logger.error(f"Both LLM providers failed: {e}")
-        raise RuntimeError("LLM generation failed") from e
+        if usage["model_used"] == settings.GROQ_MODEL:
+            usage["cost_usd"] = total_tokens / 1_000_000 * 0.27
+        else:
+            usage["cost_usd"] = (usage["input_tokens"] / 1_000_000) * 0.15 + (
+                usage["output_tokens"] / 1_000_000
+            ) * 0.60
+
+        return response.choices[0].message.content, usage
+
+    except Exception as exc:
+        logger.error("LLM generation failed: %s", exc)
+        raise RuntimeError("LLM generation failed") from exc
