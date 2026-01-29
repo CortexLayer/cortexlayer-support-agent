@@ -5,26 +5,32 @@ from typing import Dict, List, Tuple
 from openai import OpenAI
 
 from backend.app.core.config import settings
-from backend.app.ingestion.embedder_hf import get_embeddings as ge
 from backend.app.utils.logger import logger
 
-# Initialize OpenAI client once
 openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 async def get_embeddings(
     texts: List[str],
 ) -> Tuple[List[List[float]], Dict]:
-    """
-    Generate embeddings.
-    Falls back to HF embeddings.
-    """
+    """Generate embeddings using OpenAI API.
 
+    Args:
+        texts: List of text strings to generate embeddings for.
+
+    Returns:
+        Tuple containing:
+            - List of embedding vectors (each is a list of floats)
+            - Dict with usage statistics (tokens, cost, model)
+
+    Raises:
+        RuntimeError: If OpenAI API is unavailable. No fallback is used to
+            prevent embedding dimension mismatch that would corrupt the
+            FAISS index.
+    """
     try:
-        response = openai_client.embeddings.create(
-            model=settings.OPENAI_EBD_MODEL,
-            input=texts
-        )
+        model = settings.OPENAI_EBD_MODEL
+        response = openai_client.embeddings.create(model=model, input=texts)
 
         embeddings = [item.embedding for item in response.data]
 
@@ -39,30 +45,33 @@ async def get_embeddings(
         return embeddings, {
             "tokens": total_tokens,
             "cost_usd": cost,
-            "model": "text-embedding-3-small"
+            "model": settings.OPENAI_EBD_MODEL,
         }
 
     except Exception as e:
-        logger.error(
-            "OpenAI Embedding API unavailable. "
-            "Using HF embeddings temporarily."
-        )
-        logger.error(str(e))
+        logger.error(f"OpenAI Embedding API failed: {str(e)}")
+        raise RuntimeError(
+            "OpenAI embeddings unavailable. Cannot proceed with HuggingFace "
+            "fallback due to embedding dimension mismatch "
+            "(OpenAI: 1536-dim, HuggingFace: 384-dim). "
+            "This would corrupt the FAISS index. Please ensure OpenAI API "
+            "is accessible and the API key is valid."
+        ) from e
 
-        embeddings, _, tokens = ge(texts)
-
-        return embeddings, {
-            "tokens": tokens,
-            "cost_usd": 0.0,
-            "model": settings.HF_EBD_MODEL
-        }
 
 async def embed_chunks(chunks: List[Dict]) -> Tuple[List[Dict], Dict]:
-    """
-    Attach embeddings directly to chunks.
-    Kept as a thin public helper for tests and legacy compatibility.
-    """
+    """Attach embeddings directly to chunks.
 
+    Kept as a thin public helper for tests and legacy compatibility.
+
+    Args:
+        chunks: List of chunk dictionaries containing text.
+
+    Returns:
+        Tuple containing:
+            - List of chunks with embeddings attached
+            - Dict with usage statistics
+    """
     if not chunks:
         return [], {"tokens": 0, "cost_usd": 0.0}
 
@@ -77,16 +86,17 @@ async def embed_chunks(chunks: List[Dict]) -> Tuple[List[Dict], Dict]:
     return chunks, usage_stats
 
 
-async def embed_and_index(
-    client_id: str,
-    chunks: List[Dict],
-    document_id: str
-) -> Dict:
-    """
-    Full ingestion pipeline:
-    chunks → embeddings → FAISS
-    """
+async def embed_and_index(client_id: str, chunks: List[Dict], document_id: str) -> Dict:
+    """Full ingestion pipeline: chunks → embeddings → FAISS.
 
+    Args:
+        client_id: Unique identifier for the client.
+        chunks: List of chunk dictionaries to embed and index.
+        document_id: Unique identifier for the source document.
+
+    Returns:
+        Dict with usage statistics (tokens, cost, model).
+    """
     from backend.app.core.vectorstore import add_to_index
 
     if not chunks:
@@ -99,22 +109,28 @@ async def embed_and_index(
 
     metadata_list = []
     for idx, chunk in enumerate(chunks):
-        metadata_list.append({
-            "text": chunk["text"],
-            "metadata": chunk.get("metadata", {}),
-            "document_id": document_id,
-            "chunk_index": idx
-        })
+        metadata_list.append(
+            {
+                "text": chunk["text"],
+                "metadata": chunk.get("metadata", {}),
+                "document_id": document_id,
+                "chunk_index": idx,
+            }
+        )
 
     add_to_index(
         client_id=client_id,
         embeddings=embeddings,
-        metadata_list=metadata_list
+        metadata_list=metadata_list,
     )
 
     logger.info(
-        f"Indexed {len(embeddings)} chunks "
-        f"client={client_id} document={document_id}"
+        "Indexed chunks",
+        extra={
+            "chunk_count": len(embeddings),
+            "client_id": client_id,
+            "document_id": document_id,
+        },
     )
 
     return usage_stats
