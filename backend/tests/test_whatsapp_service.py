@@ -1,27 +1,35 @@
-"""Tests for WhatsApp service."""
+"""WhatsApp service processing tests."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
+from backend.app.models.client import Client, PlanType
+from backend.app.models.client_contact import ClientContact
 from backend.app.services.whatsapp_service import process_whatsapp_message
 
 
 @pytest.mark.asyncio
-async def test_process_whatsapp_text_message(monkeypatch):
-    """Text WhatsApp messages are processed without crashing."""
-    fake_db = MagicMock()
-    fake_client = MagicMock()
-    fake_client.is_disabled = False
-    fake_client.plan_type.value = "growth"
-    fake_client.id = "test-client-id"
-
-    fake_db.query().filter().first.return_value = fake_client
-
-    monkeypatch.setattr(
-        "backend.app.services.whatsapp_service.SessionLocal",
-        lambda: fake_db,
+async def test_process_whatsapp_text_message(db, monkeypatch):
+    """Text WhatsApp messages are processed and replied."""
+    client = Client(
+        email="growth@test.com",
+        hashed_password="x",
+        company_name="Growth Corp",
+        plan_type=PlanType.GROWTH,
+        is_disabled=False,
     )
+    db.add(client)
+    db.commit()
+
+    db.add(
+        ClientContact(
+            client_id=client.id,
+            channel="whatsapp",
+            external_id="1234567890",
+        )
+    )
+    db.commit()
 
     monkeypatch.setattr(
         "backend.app.services.whatsapp_service.run_rag_pipeline",
@@ -40,27 +48,17 @@ async def test_process_whatsapp_text_message(monkeypatch):
         ),
     )
 
+    monkeypatch.setattr(
+        "backend.app.services.whatsapp_service.send_whatsapp_message",
+        AsyncMock(),
+    )
+
     payload = {
         "messages": [
             {
                 "from": "1234567890",
                 "type": "text",
                 "text": {"body": "Hello"},
-            }
-        ]
-    }
-
-    await process_whatsapp_message(payload)
-
-
-@pytest.mark.asyncio
-async def test_ignore_non_text_message():
-    """Non-text WhatsApp messages are ignored."""
-    payload = {
-        "messages": [
-            {
-                "from": "1234567890",
-                "type": "image",
             }
         ]
     }

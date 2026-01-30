@@ -3,82 +3,102 @@
 from datetime import datetime
 from typing import Dict
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import SessionLocal
 from backend.app.models.chat_logs import ChatLog
-from backend.app.models.client import Client
+from backend.app.models.client_contact import ClientContact
 from backend.app.models.usage import UsageLog
 from backend.app.rag.pipeline import run_rag_pipeline
 from backend.app.services.usage_limits import check_whatsapp_limit
+from backend.app.services.whatsapp_sender import send_whatsapp_message
 from backend.app.utils.logger import logger
 
 
-async def process_whatsapp_message(webhook_value: Dict) -> None:
-    """Process a WhatsApp webhook payload."""
-    messages = webhook_value.get("messages", [])
+async def process_whatsapp_message(payload: Dict) -> None:
+    """Process a WhatsApp webhook payload safely."""
+    messages = payload.get("messages", [])
     if not messages:
-        logger.info("No messages found in webhook payload")
         return
 
     message = messages[0]
     if message.get("type") != "text":
-        logger.info("Non-text WhatsApp message received, ignoring")
         return
 
     from_number = message.get("from")
-    message_text = message.get("text", {}).get("body", "")
+    text = message.get("text", {}).get("body", "").strip()
 
-    if not message_text.strip():
-        logger.info("Empty WhatsApp text message, ignoring")
+    if not text:
         return
-
-    logger.info(
-        "WhatsApp message received",
-        extra={"from": from_number, "text": message_text},
-    )
 
     db: Session = SessionLocal()
 
     try:
-        client = db.query(Client).filter(Client.is_disabled.is_(False)).first()
-        if not client:
-            logger.warning("No active client found for WhatsApp message")
+        contact = (
+            db.query(ClientContact)
+            .filter(
+                ClientContact.channel == "whatsapp",
+                ClientContact.external_id == from_number,
+            )
+            .one_or_none()
+        )
+
+        if not contact:
+            logger.warning(
+                "WhatsApp message from unknown number",
+                extra={"from": from_number},
+            )
             return
 
+        client = contact.client
+
+        # Enforce limits BEFORE RAG
         check_whatsapp_limit(client, db)
 
         result = await run_rag_pipeline(
             client_id=str(client.id),
-            query=message_text,
+            query=text,
             plan_type=client.plan_type.value,
         )
 
-        chat_log = ChatLog(
-            client_id=client.id,
-            query_text=message_text,
-            response_text=result["answer"],
-            confidence_score=result["confidence"],
-            latency_ms=result["latency_ms"],
-            channel="whatsapp",
+        # Persist chat
+        db.add(
+            ChatLog(
+                client_id=client.id,
+                query_text=text,
+                response_text=result["answer"],
+                confidence_score=result["confidence"],
+                latency_ms=result["latency_ms"],
+                channel="whatsapp",
+            )
         )
-        db.add(chat_log)
 
-        usage_log = UsageLog(
-            client_id=client.id,
-            operation_type="whatsapp",
-            timestamp=datetime.utcnow(),
+        # Persist usage
+        usage = result["usage_stats"]
+        db.add(
+            UsageLog(
+                client_id=client.id,
+                operation_type="whatsapp",
+                input_tokens=usage["input_tokens"],
+                output_tokens=usage["output_tokens"],
+                cost_usd=usage["cost_usd"],
+                model_used=usage["model_used"],
+                latency_ms=result["latency_ms"],
+                timestamp=datetime.utcnow(),
+            )
         )
-        db.add(usage_log)
 
         db.commit()
 
-    except HTTPException:
-        raise
+        # Send reply
+        await send_whatsapp_message(
+            to_number=from_number,
+            message=result["answer"],
+        )
 
     except Exception as exc:
-        logger.error(f"WhatsApp processing failed: {exc}")
+        db.rollback()
+        logger.error("WhatsApp processing failed: %s", exc)
 
     finally:
         db.close()
