@@ -9,10 +9,7 @@ from backend.app.models.chat_logs import ChatLog
 from backend.app.models.client import Client
 from backend.app.rag.pipeline import run_rag_pipeline
 from backend.app.schemas.query import QueryRequest, QueryResponse
-from backend.app.services.billing import (
-    check_query_limit,
-    log_usage,
-)
+from backend.app.services.billing import check_query_limit, log_usage
 from backend.app.services.email_service import send_email_fallback
 from backend.app.services.handoff_service import create_handoff_ticket
 from backend.app.utils.logger import logger
@@ -39,14 +36,14 @@ async def query_support_bot(
             detail="Account disabled due to billing or policy issues.",
         )
 
-    # 2. Global rate limit (protect infra + OpenAI quota)
+    # 2. Global rate limit (infra protection)
     await check_global_rate_limit()
 
-    # 3. Per-client rate limit (per plan)
+    # 3. Per-client rate limit
     rate_limit = get_rate_limit_for_plan(client.plan_type.value)
     await check_rate_limit(str(client.id), rate_limit)
 
-    # 4. Monthly query quota enforcement (HARD stop)
+    # 4. Monthly quota enforcement
     check_query_limit(client, db)
 
     # 5. Run RAG pipeline (pure inference)
@@ -67,7 +64,7 @@ async def query_support_bot(
             detail="Query processing failed.",
         ) from None
 
-    # 6. Escalation handling (handoff + email)
+    # 6. Escalation handling
     if result["should_escalate"]:
         logger.info(
             "Escalation triggered for client %s: %s",
@@ -110,12 +107,11 @@ async def query_support_bot(
         output_tokens=result["usage_stats"]["output_tokens"],
         model_used=result["usage_stats"]["model_used"],
         latency_ms=result["latency_ms"],
-        cost_usd=result["usage_stats"]["cost_usd"],
     )
 
     db.commit()
 
-    # 9. Clean API response
+    # 9. API response
     return QueryResponse(
         answer=result["answer"],
         citations=result["citations"],

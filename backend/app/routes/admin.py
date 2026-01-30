@@ -9,6 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from backend.app.core.database import get_db
+from backend.app.dependencies.admin_auth import require_admin
 from backend.app.models.chat_logs import ChatLog
 from backend.app.models.client import Client
 from backend.app.models.handoff import HandoffStatus, HandoffTicket
@@ -20,7 +21,11 @@ from backend.app.services.analytics import (
     get_usage_summary,
 )
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(
+    prefix="/admin",
+    tags=["Admin"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @router.get("/clients", response_model=list[ClientResponse])
@@ -51,7 +56,7 @@ def get_client_usage_analytics(
     days: int = 30,
     db: Session = Depends(get_db),
 ):
-    """Get client usage analytics."""
+    """Force eager settings validation at application startup."""
     return get_usage_summary(str(client_id), db, days)
 
 
@@ -61,7 +66,7 @@ def get_client_cost_analytics(
     days: int = 30,
     db: Session = Depends(get_db),
 ):
-    """Get client cost analytics."""
+    """Return Client's cost analytics."""
     return get_cost_analytics(str(client_id), db, days)
 
 
@@ -70,7 +75,7 @@ def get_client_query_analytics(
     client_id: UUID,
     db: Session = Depends(get_db),
 ):
-    """Get client query analytics."""
+    """Return Client's query analytics."""
     return get_query_analytics(str(client_id), db)
 
 
@@ -79,7 +84,7 @@ def get_client_document_analytics(
     client_id: UUID,
     db: Session = Depends(get_db),
 ):
-    """Get client document analytics."""
+    """Return Client's documents analytics."""
     return get_document_analytics(str(client_id), db)
 
 
@@ -89,7 +94,7 @@ def get_client_dashboard(
     days: int = 30,
     db: Session = Depends(get_db),
 ):
-    """Get client dashboard analytics."""
+    """Provides the client dash."""
     cid = str(client_id)
     return {
         "usage": get_usage_summary(cid, db, days),
@@ -101,14 +106,11 @@ def get_client_dashboard(
 
 @router.get("/analytics/whatsapp/messages")
 def whatsapp_message_analytics(db: Session = Depends(get_db)):
-    """Get WhatsApp message analytics."""
+    """Provide whatsapp messages analytics."""
     total = db.query(ChatLog).filter(ChatLog.channel == "whatsapp").count()
 
     per_client = (
-        db.query(
-            Client.company_name,
-            func.count(ChatLog.id),
-        )
+        db.query(Client.company_name, func.count(ChatLog.id))
         .join(ChatLog, ChatLog.client_id == Client.id)
         .filter(ChatLog.channel == "whatsapp")
         .group_by(Client.company_name)
@@ -126,7 +128,7 @@ def whatsapp_message_analytics(db: Session = Depends(get_db)):
 
 @router.get("/analytics/whatsapp/performance")
 def whatsapp_performance_analytics(db: Session = Depends(get_db)):
-    """Get WhatsApp performance analytics."""
+    """Provide whatsapp performance analytics."""
     avg_lat, min_lat, max_lat = (
         db.query(
             func.avg(ChatLog.latency_ms),
@@ -146,19 +148,17 @@ def whatsapp_performance_analytics(db: Session = Depends(get_db)):
 
 @router.get("/analytics/whatsapp/activity")
 def whatsapp_activity_analytics(db: Session = Depends(get_db)):
-    """Get WhatsApp activity analytics."""
+    """Provide whatsapp activity analytics."""
     dialect = db.bind.dialect.name
 
-    if dialect == "sqlite":
-        hour_expr = func.strftime("%H", ChatLog.timestamp)
-    else:
-        hour_expr = func.extract("hour", ChatLog.timestamp)
+    hour_expr = (
+        func.strftime("%H", ChatLog.timestamp)
+        if dialect == "sqlite"
+        else func.extract("hour", ChatLog.timestamp)
+    )
 
     activity = (
-        db.query(
-            hour_expr.label("hour"),
-            func.count(ChatLog.id),
-        )
+        db.query(hour_expr.label("hour"), func.count(ChatLog.id))
         .filter(ChatLog.channel == "whatsapp")
         .group_by(hour_expr)
         .order_by(hour_expr)
@@ -167,10 +167,7 @@ def whatsapp_activity_analytics(db: Session = Depends(get_db)):
 
     return {
         "activity_by_hour": [
-            {
-                "hour": int(hour),
-                "message_count": count,
-            }
+            {"hour": int(hour), "message_count": count}
             for hour, count in activity
             if hour is not None
         ]
@@ -192,13 +189,9 @@ def list_handoff_tickets(
 
 
 @router.post("/handoff/{ticket_id}/resolve")
-def resolve_handoff_ticket(
-    ticket_id: UUID,
-    db: Session = Depends(get_db),
-):
-    """Resolve a handoff ticket."""
+def resolve_handoff_ticket(ticket_id: UUID, db: Session = Depends(get_db)):
+    """Mark a handoff ticket as resolved."""
     ticket = db.query(HandoffTicket).filter(HandoffTicket.id == ticket_id).first()
-
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 

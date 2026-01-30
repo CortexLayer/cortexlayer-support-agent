@@ -14,6 +14,14 @@ services:
     networks:
       - internal
 
+  scheduler:
+    image: supportagent/backend:latest
+    env_file:
+      - ../.env.production
+    command: python -m backend.app.services.scheduler
+    networks:
+      - internal
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped

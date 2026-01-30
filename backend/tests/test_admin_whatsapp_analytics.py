@@ -44,11 +44,11 @@ def seed_whatsapp_logs(db: Session):
     db.commit()
 
 
-def test_whatsapp_message_analytics(client: TestClient, db: Session):
+def test_whatsapp_message_analytics(client: TestClient, db: Session, admin_headers):
     """Test WhatsApp message analytics."""
     seed_whatsapp_logs(db)
 
-    response = client.get("/admin/analytics/whatsapp/messages")
+    response = client.get("/admin/analytics/whatsapp/messages", headers=admin_headers)
     assert response.status_code == 200
 
     data = response.json()
@@ -57,11 +57,14 @@ def test_whatsapp_message_analytics(client: TestClient, db: Session):
     assert data["total_messages"] >= 2
 
 
-def test_whatsapp_performance_analytics(client: TestClient, db: Session):
+def test_whatsapp_performance_analytics(client: TestClient, db: Session, admin_headers):
     """Test WhatsApp performance analytics."""
     seed_whatsapp_logs(db)
 
-    response = client.get("/admin/analytics/whatsapp/performance")
+    response = client.get(
+        "/admin/analytics/whatsapp/performance",
+        headers=admin_headers,
+    )
     assert response.status_code == 200
 
     data = response.json()
@@ -69,11 +72,11 @@ def test_whatsapp_performance_analytics(client: TestClient, db: Session):
     assert data["average_latency_ms"] > 0
 
 
-def test_whatsapp_activity_analytics(client: TestClient, db: Session):
+def test_whatsapp_activity_analytics(client: TestClient, db: Session, admin_headers):
     """Test WhatsApp activity analytics."""
     seed_whatsapp_logs(db)
 
-    response = client.get("/admin/analytics/whatsapp/activity")
+    response = client.get("/admin/analytics/whatsapp/activity", headers=admin_headers)
     assert response.status_code == 200
 
     data = response.json()

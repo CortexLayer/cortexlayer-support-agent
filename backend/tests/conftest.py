@@ -1,5 +1,9 @@
 """Tests conftest."""
 
+import os
+
+os.environ["ADMIN_API_KEY"] = "test-admin-key"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,8 +12,14 @@ from sqlalchemy.orm import sessionmaker
 from backend.app.core.database import Base, get_db
 from backend.app.main import app
 
-# ❗ DO NOT use :memory:
+# DO NOT use :memory:
 TEST_DATABASE_URL = "sqlite:///./test.db"
+
+
+@pytest.fixture
+def admin_headers():
+    """Return valid admin authentication headers."""
+    return {"X-Admin-Key": "test-admin-key"}
 
 
 @pytest.fixture(scope="session")

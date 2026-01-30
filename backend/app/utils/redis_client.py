@@ -18,13 +18,13 @@ except Exception as e:
 def test_redis_connection():
     """For Testing Redis Connection."""
     if redis_client is None:
-        logger.error("❌ Redis not initialized")
+        logger.error("Redis not initialized")
         return False
 
     try:
         redis_client.ping()
-        logger.info("✅ Redis connection successful")
+        logger.info("Redis connection successful")
         return True
     except Exception as e:
-        logger.error(f"❌ Redis connection failed: {e}")
+        logger.error(f"Redis connection failed: {e}")
         return False

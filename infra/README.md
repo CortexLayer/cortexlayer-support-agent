@@ -17,45 +17,38 @@ Prerequisites:
 
 Start containers:
 
-```
-
+```bash
 cd infra
 docker compose -f docker-compose.dev.yml up --build -d
-
-```
+````
 
 Stop:
 
-```
-
+```bash
 docker compose -f docker-compose.dev.yml down
-
 ```
 
 Reset database:
 
-```
-
+```bash
 docker compose -f docker-compose.dev.yml down -v
-
 ```
 
 Logs:
 
-```
-
+```bash
 docker compose logs -f
-
 ```
 
 Backend runs with live reload at:
-http://localhost:8000
+[http://localhost:8000](http://localhost:8000)
 
 Database:
 
-localhost:5432  
-User: postgres  
-Password: postgres
+* Host: localhost
+* Port: 5433
+* User: postgres
+* Password: postgres
 
 ---
 
@@ -63,42 +56,39 @@ Password: postgres
 
 Production uses external managed services:
 
-- PostgreSQL = Railway
-- Redis = Upstash
-- Nginx = Reverse proxy
-- Cloudflare = SSL / DNS
+* PostgreSQL = Railway
+* Redis = Upstash
+* Nginx = Reverse proxy
+* Cloudflare = SSL / DNS
 
-Start:
+Start services:
 
-```
-
+```bash
 cd infra
 docker compose up -d
-
 ```
 
-Stop:
+Stop services:
 
-```
-
+```bash
 docker compose down
-
 ```
 
 Logs:
 
-```
-
+```bash
 docker compose logs -f
-
 ```
 
 ---
 
-## Scheduled Jobs (Cron)
+## Scheduled Jobs (Billing & Enforcement)
 
 CortexLayer relies on scheduled background jobs for billing enforcement
-and system maintenance. These jobs do NOT run as part of API requests.
+and account lifecycle management.
+
+These jobs **DO NOT run automatically** as part of the API
+and **ARE NOT self-scheduling**.
 
 ---
 
@@ -106,11 +96,9 @@ and system maintenance. These jobs do NOT run as part of API requests.
 
 **Frequency:** Daily
 
-- Checks monthly usage per client
-- Bills usage beyond soft cap (plan limit + 20%)
-- Disables client access after hard cap (plan limit + 50%)
-
-Uses existing billing and usage data stored in PostgreSQL.
+* Checks monthly usage per client
+* Bills usage beyond soft cap (plan limit + 20%)
+* Disables client access after hard cap (plan limit + 50%)
 
 ---
 
@@ -118,29 +106,40 @@ Uses existing billing and usage data stored in PostgreSQL.
 
 **Frequency:** Daily
 
-- Identifies clients in `GRACE_PERIOD`
-- Disables accounts after 7 days without successful payment
+* Identifies clients in `GRACE_PERIOD`
+* Disables accounts after 7 days without successful payment
 
 ---
 
-### Database Backups
+### Scheduler Execution Model
 
-**Frequency:** Daily (recommended)
+Billing and enforcement logic is packaged in a dedicated container
+named `scheduler`.
 
-- Dumps PostgreSQL database
-- Uploads backup to object storage (e.g. S3)
-- Retains last 7 days of backups
+The scheduler:
 
-Backup script:
+* Executes **once**
+* Performs a full billing + enforcement pass
+* Exits cleanly
 
+---
+
+### Production Requirement
+
+In production, the scheduler **MUST be triggered by host-level cron**.
+
+Example:
+
+```cron
+0 2 * * * cd /srv/cortexlayer/infra && docker compose run --rm scheduler >> /var/log/cortexlayer-scheduler.log 2>&1
 ```
 
-backend/scripts/backup_db.sh
-
-```
+Docker Compose **does not provide scheduling**.
+Without host cron, billing will only run once (at deploy time).
 
 ---
 
 ## Architecture
 
 Client → Cloudflare → Nginx → FastAPI
+Scheduler → PostgreSQL + Redis (independent of API)

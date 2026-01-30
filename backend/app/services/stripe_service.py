@@ -11,6 +11,11 @@ from backend.app.utils.logger import logger
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+def create_stripe_customer(email: str, company_name: str):
+    """Create a Stripe customer for a new client."""
+    return create_customer(email=email, name=company_name)
+
+
 def create_customer(email: str, name: str) -> str:
     """Create a Stripe customer and return the customer ID."""
     try:
